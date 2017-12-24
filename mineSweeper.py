@@ -326,6 +326,6 @@ class MineViewBoard(MineControlBoard):
 if __name__ == "__main__":
     pygame.init()
     b = MineViewBoard(20, 30, 50)
-    my_font = pygame.font.SysFont("arial", 24)
+    my_font = pygame.font.SysFont("arial", 16)
     b.create_screen()
     b.screen_run()
