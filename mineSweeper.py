@@ -7,19 +7,42 @@ import pygame
 from pygame.locals import *
 
 
-params = {
+game_cfg = {
+    "width": 40,
+    "height": 25,
+    "num_mine": 200
+}
+
+
+show_cfg = {
+    "width": 1200,
+    "height": 750,
     "topleft": (50, 50),
     "block_size": 25,
     "line_width": 1,
+    "font": "arial",
+    "font_size": 16,
+    }
+
+color_cfg = {
+    "psudo": (150, 150, 150),
     " ": (127, 127, 127),
     "X": (127, 127, 127),
     # "X": (255, 255, 255),
     "F": (255, 0, 0),
-    "W": (255, 0, 0),
-    "?": (127, 127, 0),
-    "!": (127, 127, 0),
+    "W": (255, 255, 0),
+    "?": (40, 200, 0),
+    "!": (40, 200, 0),
     "B": (200, 200, 200),
-    "number": (0, 0, 255)
+    "number": (0, 0, 255),
+    "1": (0, 0, 255),
+    "2": (0, 255, 0),
+    "3": (255, 0, 0),
+    "4": (0, 255, 255),
+    "5": (0, 127, 127),
+    "6": (0, 0, 255),
+    "7": (0, 0, 255),
+    "8": (0, 0, 255),
 }
 
 
@@ -266,10 +289,14 @@ class MineModelBoard():
 
 
 class MineControlBoard(MineModelBoard):
+    def _axis_2_grid(self, x, y):
+        x = (x - show_cfg["topleft"][0]) // show_cfg["block_size"]
+        y = (y - show_cfg["topleft"][1]) // show_cfg["block_size"]
+        return x, y
+
     def click(self, x, y, button):
         # get board pos from camvass pos
-        x = (x - params["topleft"][0]) // params["block_size"]
-        y = (y - params["topleft"][1]) // params["block_size"]
+        x, y = self._axis_2_grid(x, y)
         if button == 1:
             self.left_click(y, x)
         elif button == 3:
@@ -279,24 +306,27 @@ class MineControlBoard(MineModelBoard):
 
 
 class MineViewBoard(MineControlBoard):
-    def _draw_block(self, x, y):
-        c = self._get(x, y)
-        if c is None:
-            return
-        top = params["topleft"][0] + x * params["block_size"]
-        left = params["topleft"][1] + y * params["block_size"]
-        fill_size = params["block_size"] - params["line_width"]
+    def _draw_block(self, x, y, mark=None):
+        if mark is not None:
+            c = mark
+        else:
+            c = self._get(x, y)
+            if c is None:
+                return
+        top = show_cfg["topleft"][0] + x * show_cfg["block_size"]
+        left = show_cfg["topleft"][1] + y * show_cfg["block_size"]
+        fill_size = show_cfg["block_size"] - show_cfg["line_width"]
         if c in "12345678":
             number = c
             c = "B"
         else:
             number = None
-        color = params.get(c, (0, 0, 0))
+        color = color_cfg.get(c, (0, 0, 0))
 
         rect = Rect(left, top, fill_size, fill_size)
         pygame.draw.rect(self.screen, color, rect)
         if number:
-            text_surface = my_font.render(number, True, params["number"])
+            text_surface = my_font.render(number, True, color_cfg.get(number, color_cfg["number"]))
             self.screen.blit(text_surface, (left + 6, top + 6))  # TODO: calc 4
 
     def _draw_board(self):
@@ -304,12 +334,14 @@ class MineViewBoard(MineControlBoard):
             for y in range(self.h):
                 self._draw_block(x, y)
 
-    def create_screen(self, width=840, height=640, full_screen=0):
+    def create_screen(self, width, height, full_screen=0):
         self.screen = pygame.display.set_mode((width, height), full_screen, 32)
 
-    def screen_run(self, fps=30):
+    def screen_run(self, fps=60):
         while True:
             time.sleep(1.0 / fps)
+            self._draw_board()
+            pygame.display.update()
             for event in pygame.event.get():
                 if event.type == QUIT:
                     sys.exit()
@@ -317,15 +349,12 @@ class MineViewBoard(MineControlBoard):
                     self.click(event.pos[0],
                                event.pos[1],
                                event.button)
-
-            # self.screen.blit(background, (0,0))
-            self._draw_board()
-            pygame.display.update()
+            
 
 
 if __name__ == "__main__":
     pygame.init()
-    b = MineViewBoard(20, 30, 50)
-    my_font = pygame.font.SysFont("arial", 16)
-    b.create_screen()
+    b = MineViewBoard(game_cfg["height"], game_cfg["width"], game_cfg["num_mine"])
+    my_font = pygame.font.SysFont(show_cfg["font"], show_cfg["font_size"])
+    b.create_screen(show_cfg["width"], show_cfg["height"])
     b.screen_run()
