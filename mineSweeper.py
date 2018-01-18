@@ -8,9 +8,9 @@ from pygame.locals import *
 
 
 game_cfg = {
-    "width": 40,
-    "height": 25,
-    "num_mine": 200
+    "width": 30,
+    "height": 16,
+    "num_mine": 99
 }
 
 
@@ -18,10 +18,10 @@ show_cfg = {
     "width": 1200,
     "height": 750,
     "topleft": (50, 50),
-    "block_size": 25,
-    "line_width": 1,
+    "block_size": 35,
+    "line_width": 2,
     "font": "arial",
-    "font_size": 16,
+    "font_size": 24,
     }
 
 color_cfg = {
@@ -30,7 +30,7 @@ color_cfg = {
     "X": (127, 127, 127),
     # "X": (255, 255, 255),
     "F": (255, 0, 0),
-    "W": (255, 255, 0),
+    "W": (255, 0, 0),
     "?": (40, 200, 0),
     "!": (40, 200, 0),
     "B": (200, 200, 200),
@@ -132,12 +132,11 @@ class MineModelBoard():
     def left_click(self, x, y):
         if self._get(x, y) is None:
             logging.info("click out of board")
-            return
         if self._get(x, y) == "X":
             return True
         if self._get(x, y) != " ":
             logging.info("try to sweep a marked block.")
-            return
+            return self.both_click(x, y) #TODO: true both click
         is_lose = self.one_block_sweep(x, y)
         if is_lose:
             return True
@@ -298,9 +297,9 @@ class MineControlBoard(MineModelBoard):
         # get board pos from camvass pos
         x, y = self._axis_2_grid(x, y)
         if button == 1:
-            self.left_click(y, x)
+            return self.left_click(y, x)
         elif button == 3:
-            self.right_click(y, x)
+            return self.right_click(y, x)
         else:
             pass  # TODO
 
@@ -338,18 +337,33 @@ class MineViewBoard(MineControlBoard):
         self.screen = pygame.display.set_mode((width, height), full_screen, 32)
 
     def screen_run(self, fps=60):
+        is_loss = False
         while True:
             time.sleep(1.0 / fps)
             self._draw_board()
             pygame.display.update()
-            for event in pygame.event.get():
+            if not is_loss: #TODO: delete it
+                event = pygame.event.wait()
                 if event.type == QUIT:
                     sys.exit()
                 if event.type == MOUSEBUTTONDOWN:
-                    self.click(event.pos[0],
-                               event.pos[1],
-                               event.button)
-            
+                    is_loss = self.click(event.pos[0],
+                                         event.pos[1],
+                                         event.button)
+                    if is_loss:
+                        color_cfg["X"] = (0, 0, 0)
+                        color_cfg["W"] = (255, 255, 0)
+            else:
+                event = pygame.event.wait()
+                if event.type == QUIT:
+                    sys.exit()
+                if event.type == MOUSEBUTTONDOWN:
+                    self._reset()
+                    is_loss = False
+                    color_cfg["X"] = (127, 127, 127)
+                    color_cfg["W"] = (255, 0, 0)
+
+
 
 
 if __name__ == "__main__":
